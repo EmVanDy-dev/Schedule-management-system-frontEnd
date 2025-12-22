@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import type { User } from "../User";
 
 // Define the shape of the AuthContext
-interface AuthContextType{
+interface AuthContextType {
   user: User | null;
-  login: (user: User, token: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -18,11 +18,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   // LOGIN
-  const login = (userData: User, token: string) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
-    navigate(`/${userData.role.toLowerCase()}`); // Redirect based on role
+  const login = async (email: string, password: string) => {
+    const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Invalid credentials");
+    }
+
+    const data = await res.json();
+
+    if (data.access) {
+      localStorage.setItem("token", data.access);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+
+      const roleRoute = data.user.roleName.toLowerCase();
+      navigate(`/${roleRoute}`); // Redirect based on role
+    }
   };
 
   // LOGOUT
@@ -43,4 +61,4 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
   return ctx;
-}
+};

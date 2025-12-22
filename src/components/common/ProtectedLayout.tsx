@@ -6,7 +6,7 @@ export default function ProtectedLayout() {
   return (
     <div>
       <Navbar />
-      <div style={{ display: "flex" }}>
+      <div style={{ display: "flex" }} >
         <Sidebar />
         <div style={{ padding: "20px", flex: 1 }}>
           <Outlet />
