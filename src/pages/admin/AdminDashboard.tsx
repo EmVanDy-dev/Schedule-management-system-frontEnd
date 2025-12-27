@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { User } from "../../User";
+import type { User } from "../../model";
 import { getUser } from "../../api/auth";
 
 export default function AdminDashboard() {

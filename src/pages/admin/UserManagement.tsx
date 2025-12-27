@@ -1,12 +1,20 @@
 import { useState, useMemo, useEffect, use } from "react";
 import { Modal, Button, ModalHeader, ModalTitle } from "react-bootstrap";
-import type { User } from "../../User";
+import type { User } from "../../model";
+import type { AlertType } from "../../components/AlertFunction";
 
 import { getUser, createUser, deleteUser, updateUser } from "../../api/auth";
+import AlertFunction from "../../components/AlertFunction";
+import { useFilter } from "../../hooks/useFilter";
+import Pagination from "../../components/Pagination";
 
 const PAGE_SIZE = 5;
 
 export default function UserManagement() {
+  // COMPORNENT FOR ALERT MESSAGE
+  const [alertType, setAlertType] = useState<AlertType | undefined>();
+  const [alertMessage, setAlertMessage] = useState<string | undefined>();
+
   const [users, setUsers] = useState<User[]>([]);
 
   // Fetch users
@@ -27,15 +35,14 @@ export default function UserManagement() {
   const [filterRole, setFilterRole] = useState("ALL");
   const [page, setPage] = useState(1);
 
-  // Filer Role
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const matchRole = filterRole === "ALL" || u.roleName === filterRole;
-      const matchSearch =
-        u.email?.toLowerCase().includes(search.toLowerCase()) ?? false;
-      return matchRole && matchSearch;
-    });
-  }, [users, search, filterRole]);
+  // FILTER USER AND VALUE
+  const filteredUsers = useFilter({
+    data: users,
+    search,
+    searchFields: ["id", "email", "first_name", "last_name"],
+    roleField: "roleName",
+    roleValue: filterRole,
+  });
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
   const paginatedUsers = filteredUsers.slice(
@@ -85,7 +92,12 @@ export default function UserManagement() {
           password: password,
           username: `${first_name}${last_name}`,
         });
-        setUsers([...users, newUser]);
+        setUsers([...users, newUser]);  
+
+        // Success alert
+        setAlertMessage(undefined);
+        setAlertType("success");
+        setAlertMessage(`${newUser.last_name} added successfully!`);
       } else {
         // Edite user
         const resUpdateUser = await updateUser(id, {
@@ -96,6 +108,19 @@ export default function UserManagement() {
           password: password,
           username: `${first_name}${last_name}`,
         });
+        //  UPDATE USER TABLE WHEN UPDATE
+        if (resUpdateUser) {
+          setUsers(
+            users.map((u) =>
+              u.id === id ? { ...u, id, first_name, last_name, email, role } : u
+            )
+          );
+
+          // Success Alert
+          setAlertMessage(undefined);
+          setAlertType("success");
+          setAlertMessage(`Update successfully! ✅`);
+        }
       }
 
       setShow(false);
@@ -129,10 +154,15 @@ export default function UserManagement() {
     if (!userToDelete) return;
 
     const res = await deleteUser(userToDelete.id);
-    console.log("delete user : ", res);
-    setUsers(users.filter((u) => u.id !== userToDelete.id));
-    setShowDelete(false);
-    setUserToDelete(null);
+    if (res) {
+      setUsers(users.filter((u) => u.id !== userToDelete.id));
+      setShowDelete(false);
+      setUserToDelete(null);
+      // Success Alert
+      setAlertMessage(undefined);
+      setAlertType("danger");
+      setAlertMessage(`Delete successfully! ✅`);
+    }
   };
 
   return (
@@ -240,35 +270,7 @@ export default function UserManagement() {
       </div>
 
       {/* PAGINATION */}
-      {totalPages > 1 && (
-        <nav className="mt-3">
-          <ul className="pagination justify-content-end">
-            <li className={`page-item ${page === 1 && "disabled"}`}>
-              <button
-                className="page-link"
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Previous
-              </button>
-            </li>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <li key={i} className={`page-item ${page === i + 1 && "active"}`}>
-                <button className="page-link" onClick={() => setPage(i + 1)}>
-                  {i + 1}
-                </button>
-              </li>
-            ))}
-            <li className={`page-item ${page === totalPages && "disabled"}`}>
-              <button
-                className="page-link"
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {/* MODAL */}
       <Modal show={show} onHide={() => setShow(false)} centered>
@@ -368,9 +370,16 @@ export default function UserManagement() {
         </Modal.Footer>
       </Modal>
 
-      <div className="alert alert-success position-fixed" role="alert">
-        A simple success alert—check it out!
-      </div>
+      {/* Alert Message  */}
+      {alertMessage && (
+        <AlertFunction
+          key={Date.now()}
+          message={alertMessage}
+          type={alertType}
+          duration={5000}
+          width="50%"
+        />
+      )}
     </div>
   );
 }

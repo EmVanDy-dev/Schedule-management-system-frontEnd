@@ -46,11 +46,12 @@ export async function updateUser(id: number, data: any) {
     headers: authHeader(),
     body: JSON.stringify(data),
   });
+
   if (!res.ok) {
     const text = await res.text();
+    
     throw text ? JSON.parse(text) : { message: "Delete failed" };
   }
-
   return true;
 }
 
@@ -60,4 +61,11 @@ export async function deleteUser(id: number) {
     method: "DELETE",
     headers: authHeader(),
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    
+    throw text ? JSON.parse(text) : { message: "Delete failed" };
+  }
+  return res.ok;
 }

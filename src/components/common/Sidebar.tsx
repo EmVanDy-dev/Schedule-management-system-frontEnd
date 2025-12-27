@@ -1,13 +1,25 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext2";
 
 export default function Sidebar() {
   const { user } = useAuth();
   const location = useLocation();
 
+  const [component, setComponent] = useState<boolean>(false);
+  const [component2, setComponent2] = useState<boolean>(false);
+
   const linkClass = (path: string): string =>
     `list-group-item list-group-item-action mb-2 rounded ${
       location.pathname === path ? "active fw-semibold" : ""
+    }`;
+
+  // For active on Manage Tap
+  const toggleClass = (paths: string[]) =>
+    `list-group-item list-group-item-action mb-2 rounded ${
+      paths.some((p) => location.pathname.startsWith(p))
+        ? "active fw-semibold"
+        : ""
     }`;
 
   return (
@@ -29,16 +41,100 @@ export default function Sidebar() {
               📊 Dashboard
             </Link>
 
-            <Link
-              className={linkClass("/admin/schedule")}
-              to="/admin/schedule"
-            >
+            <Link className={linkClass("/admin/schedule")} to="/admin/schedule">
               🗓 Create Schedule
             </Link>
+            {/* ROOMS TOGGLE */}
 
-            <Link className={linkClass("/admin/rooms")} to="/admin/rooms">
-              🏫 Rooms
-            </Link>
+            {/* <button
+              className="list-group-item list-group-item-action mb-2 rounded"
+              onClick={() => setComponent(!component)}
+              style={{ cursor: "pointer" }}
+            >
+              🧑🏿‍💼 Manage
+              <span className="float-end">{component ? "▲" : "▼"}</span>
+            </button> */}
+            <button
+              className={toggleClass([
+                "/admin/majors",
+                "/admin/subjects",
+                "/admin/studentgroups",
+                "/admin/studentgroupmembertaps",
+              ])}
+              onClick={() => setComponent(!component)}
+              style={{ cursor: "pointer" }}
+            >
+              Manage Academic
+              <span className="float-end">{component ? "▲" : "▼"}</span>
+            </button>
+            {component && (
+              <div style={{ fontSize: "14px" }} className="ms-3">
+                <Link
+                  className={linkClass("/admin/majors") + ""}
+                  to="/admin/majors"
+                >
+                  Create Majors
+                </Link>
+
+                <Link
+                  className={linkClass("/admin/subjects")}
+                  to="/admin/subjects"
+                >
+                  Create Subject
+                </Link>
+
+                <Link
+                  className={linkClass("/admin/studentgroups")}
+                  to="/admin/studentgroups"
+                >
+                  Student Group
+                </Link>
+                <Link
+                  className={linkClass("/admin/studentgroupmembertaps")}
+                  to="/admin/studentgroupmembertaps"
+                >
+                  Group Student Memmbers
+                </Link>
+              </div>
+            )}
+
+            <button
+              className={toggleClass([
+                "/admin/rooms",
+                "/admin/departments",
+                "/admin/buildings",
+              ])}
+              onClick={() => setComponent2(!component2)}
+              style={{ cursor: "pointer" }}
+            >
+              👩🏿‍💼 Manage
+              <span className="float-end">{component2 ? "▲" : "▼"}</span>
+            </button>
+
+            {component2 && (
+              <div style={{ fontSize: "14px" }} className="ms-3">
+                <Link
+                  className={linkClass("/admin/rooms") + ""}
+                  to="/admin/rooms"
+                >
+                  ➕ Create Room
+                </Link>
+
+                <Link
+                  className={linkClass("/admin/departments")}
+                  to="/admin/departments"
+                >
+                  🏢 Departments
+                </Link>
+
+                <Link
+                  className={linkClass("/admin/buildings")}
+                  to="/admin/buildings"
+                >
+                  🏗 Buildings
+                </Link>
+              </div>
+            )}
 
             <Link className={linkClass("/admin/users")} to="/admin/users">
               👥 Manage Users
